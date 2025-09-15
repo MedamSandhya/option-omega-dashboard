@@ -1,6 +1,5 @@
-# Core logic for parsing and calculating P/L
-
 # trade_parser.py
+
 import csv
 from collections import defaultdict
 from models import StrategyResult, PortfolioSummary

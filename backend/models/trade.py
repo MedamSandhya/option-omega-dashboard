@@ -1,14 +1,7 @@
-# Pydantic models for request/response
-
 # models.py
+
 from pydantic import BaseModel
 from typing import List
-
-class TradeRow(BaseModel):
-    date: str
-    strategy: str
-    contracts: int
-    gross_pl: float
 
 class StrategyResult(BaseModel):
     strategy: str
