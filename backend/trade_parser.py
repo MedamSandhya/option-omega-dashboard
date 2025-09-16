@@ -2,8 +2,8 @@
 
 import csv
 from collections import defaultdict
-from models import StrategyResult, PortfolioSummary
-from utils import calculate_charges, calculate_tax
+from backend.utils import calculate_charges, calculate_tax
+from backend.models import StrategyResult, PortfolioSummary
 
 def parse_trades_from_csv(file_path: str) -> PortfolioSummary:
     strat_data = defaultdict(lambda: {"contracts": 0, "gross": 0.0})

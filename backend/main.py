@@ -1,6 +1,6 @@
 # main.py
 from fastapi import FastAPI, UploadFile, File
-from trade_parser import parse_trades_from_csv
+from backend.trade_parser import parse_trades_from_csv
 import shutil
 import uuid
 
