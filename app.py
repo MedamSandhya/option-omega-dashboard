@@ -1,61 +1,64 @@
 import streamlit as st
 import pandas as pd
+import requests
+import io
 
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
 st.title("📊 Option Omega Strategy Dashboard")
 
-# 🔹 User input for tax rate
-tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=35.0, step=0.5)
+# User input: tax rate
+tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=35.0) / 100
 
-# 🔹 File uploader
-uploaded_file = st.file_uploader("Upload your Option Omega trade log (CSV)", type=["csv"])
+# File uploader
+uploaded_file = st.file_uploader("Upload your Option Omega trade log (CSV)", type="csv")
 
 if uploaded_file is not None:
-    # Read CSV into DataFrame
-    df = pd.read_csv(uploaded_file)
+    try:
+        # Read CSV
+        df = pd.read_csv(uploaded_file)
 
-    st.write("📋 Preview of uploaded CSV:")
-    st.dataframe(df.head())
+        # Normalize columns
+        df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
-    # Let user choose which columns map to strategy and P/L
-    strategy_col = st.selectbox("Select Strategy Column", df.columns)
-    pl_col = st.selectbox("Select Gross P/L Column", df.columns)
+        # Ensure required columns
+        if "p/l" not in df.columns or "strategy" not in df.columns:
+            st.error("CSV must contain at least 'Strategy' and 'P/L' columns")
+        else:
+            # Rename and calculate commissions
+            df = df.rename(columns={"p/l": "gross_pl"})
+            if "opening_commissions_+_fees" not in df.columns:
+                df["opening_commissions_+_fees"] = 0
+            if "closing_commissions_+_fees" not in df.columns:
+                df["closing_commissions_+_fees"] = 0
+            df["commissions_paid"] = df["opening_commissions_+_fees"] + df["closing_commissions_+_fees"]
 
-    # Rename for consistency
-    df = df.rename(columns={strategy_col: "strategy", pl_col: "gross_pl"})
+            # Adjust profit by commissions
+            df["profit_after_commissions"] = df["gross_pl"] - df["commissions_paid"]
 
-    # Apply tax calculations
-    df["tax_rate"] = tax_rate
-    df["tax_paid"] = df["gross_pl"].apply(lambda x: max(0, x * (tax_rate / 100)) if x > 0 else 0)
-    df["net_pl"] = df["gross_pl"] - df["tax_paid"]
+            # Group by strategy
+            summary = df.groupby("strategy").agg(
+                Gross_PL=("profit_after_commissions", "sum"),
+                Commissions=("commissions_paid", "sum")
+            ).reset_index()
 
-    # Show strategy performance
-    st.subheader("💰 Strategy Performance")
-    cols = st.columns(min(len(df), 5))  # limit to 5 per row
-    for idx, row in df.iterrows():
-        with cols[idx % 5]:
-            st.metric(
-                label=row["strategy"],
-                value=f"${row['net_pl']:,.2f}",
-                delta=f"Tax: ${row['tax_paid']:,.2f}"
-            )
+            # Tax (only if profit > 0)
+            summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
 
-    # Detailed results
-    st.subheader("📋 Detailed Results")
-    st.dataframe(
-        df.style.format({"gross_pl": "${:,.2f}", "tax_paid": "${:,.2f}", "net_pl": "${:,.2f}"})
-    )
+            # Net P/L after tax
+            summary["Net_PL"] = summary["Gross_PL"] - summary["Tax_Paid"]
 
-    # Totals
-    st.subheader("📊 Summary")
-    total_gross = df["gross_pl"].sum()
-    total_tax = df["tax_paid"].sum()
-    total_net = df["net_pl"].sum()
+            # Reorder columns
+            summary = summary[["strategy", "Gross_PL", "Commissions", "Tax_Paid", "Net_PL"]]
 
-    st.write(f"**Total Gross P/L:** ${total_gross:,.2f}")
-    st.write(f"**Total Tax Paid:** ${total_tax:,.2f}")
-    st.write(f"**Total Net P/L:** ${total_net:,.2f}")
+            # Show results
+            st.subheader("📌 Strategy-Level Summary")
+            st.dataframe(summary.style.format({
+                "Gross_PL": "${:,.2f}",
+                "Commissions": "${:,.2f}",
+                "Tax_Paid": "${:,.2f}",
+                "Net_PL": "${:,.2f}"
+            }))
 
-else:
-    st.info("Please upload a trade log CSV to see results.")
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
