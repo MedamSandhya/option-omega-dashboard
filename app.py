@@ -15,43 +15,47 @@ if uploaded_file is not None:
     # Read CSV into DataFrame
     df = pd.read_csv(uploaded_file)
 
-    # Expected columns: "strategy", "gross_pl"
-    if "strategy" not in df.columns or "gross_pl" not in df.columns:
-        st.error("CSV must contain at least 'strategy' and 'gross_pl' columns")
-    else:
-        # Apply tax calculations
-        df["tax_rate"] = tax_rate
-        df["tax_paid"] = df["gross_pl"].apply(lambda x: max(0, x * (tax_rate / 100)) if x > 0 else 0)
-        df["net_pl"] = df["gross_pl"] - df["tax_paid"]
+    st.write("📋 Preview of uploaded CSV:")
+    st.dataframe(df.head())
 
-        # Show strategy performance as metrics
-        st.subheader("💰 Strategy Performance")
-        cols = st.columns(len(df))
-        for idx, row in df.iterrows():
-            with cols[idx]:
-                st.metric(
-                    label=row["strategy"],
-                    value=f"${row['net_pl']:,.2f}",
-                    delta=f"Tax: ${row['tax_paid']:,.2f}"
-                )
+    # Let user choose which columns map to strategy and P/L
+    strategy_col = st.selectbox("Select Strategy Column", df.columns)
+    pl_col = st.selectbox("Select Gross P/L Column", df.columns)
 
-        # Detailed results table
-        st.subheader("📋 Detailed Results")
-        st.dataframe(
-            df.style.format(
-                {"gross_pl": "${:,.2f}", "tax_paid": "${:,.2f}", "net_pl": "${:,.2f}"}
+    # Rename for consistency
+    df = df.rename(columns={strategy_col: "strategy", pl_col: "gross_pl"})
+
+    # Apply tax calculations
+    df["tax_rate"] = tax_rate
+    df["tax_paid"] = df["gross_pl"].apply(lambda x: max(0, x * (tax_rate / 100)) if x > 0 else 0)
+    df["net_pl"] = df["gross_pl"] - df["tax_paid"]
+
+    # Show strategy performance
+    st.subheader("💰 Strategy Performance")
+    cols = st.columns(min(len(df), 5))  # limit to 5 per row
+    for idx, row in df.iterrows():
+        with cols[idx % 5]:
+            st.metric(
+                label=row["strategy"],
+                value=f"${row['net_pl']:,.2f}",
+                delta=f"Tax: ${row['tax_paid']:,.2f}"
             )
-        )
 
-        # Totals
-        st.subheader("📊 Summary")
-        total_gross = df["gross_pl"].sum()
-        total_tax = df["tax_paid"].sum()
-        total_net = df["net_pl"].sum()
+    # Detailed results
+    st.subheader("📋 Detailed Results")
+    st.dataframe(
+        df.style.format({"gross_pl": "${:,.2f}", "tax_paid": "${:,.2f}", "net_pl": "${:,.2f}"})
+    )
 
-        st.write(f"**Total Gross P/L:** ${total_gross:,.2f}")
-        st.write(f"**Total Tax Paid:** ${total_tax:,.2f}")
-        st.write(f"**Total Net P/L:** ${total_net:,.2f}")
+    # Totals
+    st.subheader("📊 Summary")
+    total_gross = df["gross_pl"].sum()
+    total_tax = df["tax_paid"].sum()
+    total_net = df["net_pl"].sum()
+
+    st.write(f"**Total Gross P/L:** ${total_gross:,.2f}")
+    st.write(f"**Total Tax Paid:** ${total_tax:,.2f}")
+    st.write(f"**Total Net P/L:** ${total_net:,.2f}")
 
 else:
     st.info("Please upload a trade log CSV to see results.")
