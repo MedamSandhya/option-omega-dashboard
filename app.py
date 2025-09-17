@@ -46,7 +46,8 @@ if uploaded_file is not None:
             summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
 
             # Net P/L after tax
-            summary["Net_PL"] = summary["Gross_PL"] - summary["Tax_Paid"]
+            # Net P/L after commissions AND tax
+            summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
 
             # Reorder columns
             summary = summary[["strategy", "Gross_PL", "Commissions", "Tax_Paid", "Net_PL"]]
