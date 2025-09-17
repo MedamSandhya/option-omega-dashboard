@@ -1,18 +1,17 @@
-# backend/models.py
-
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
-class StrategyResult(BaseModel):
-    strategy_name: str
+class Trade(BaseModel):
+    strategy: str
     gross_pl: float
-    charges: float
-    tax: float
+
+class TradeWithTax(BaseModel):
+    strategy: str
+    gross_pl: float
+    tax_rate: float
+    tax_paid: float
     net_pl: float
 
-class PortfolioSummary(BaseModel):
-    total_gross_pl: float
-    total_charges: float
-    total_tax: float
-    total_net_pl: float
-    strategy_breakdown: List[StrategyResult]
+class TradesRequest(BaseModel):
+    trades: List[Trade]
+    tax_rate: float

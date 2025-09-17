@@ -1,53 +1,59 @@
 import streamlit as st
+import requests
 import pandas as pd
-import plotly.express as px
 
-st.set_page_config(page_title="Options Strategy Dashboard", layout="wide")
+st.set_page_config(page_title="Option Omega Dashboard", layout="wide")
 
 st.title("📊 Option Omega Strategy Dashboard")
 
-uploaded_file = st.file_uploader("Upload your Option Omega Trade Log CSV", type=["csv"])
+# 🔹 User input for tax rate
+tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=35.0, step=0.5)
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    df.columns = [c.strip() for c in df.columns]
+# 🔹 Example trades (later you can replace with CSV upload or API)
+example_trades = [
+    {"strategy": "Iron Condor", "gross_pl": 2450},
+    {"strategy": "Bull Put Spread", "gross_pl": 1890},
+    {"strategy": "Call Credit Spread", "gross_pl": 3120},
+    {"strategy": "Butterfly Spread", "gross_pl": 890},
+    {"strategy": "Iron Butterfly", "gross_pl": 1650},
+]
 
-    if 'Open Date' in df.columns:
-        df['Open Date'] = pd.to_datetime(df['Open Date'])
+# 🔹 Backend API call
+backend_url = "http://127.0.0.1:8001/calculate_pl/"  # <- port 8001 since you started uvicorn with --port 8001
+payload = {"trades": example_trades, "tax_rate": tax_rate}
+response = requests.post(backend_url, json=payload)
 
-    strategy_names = df['Strategy'].dropna().unique()
-    selected_strategies = st.sidebar.multiselect("Filter by Strategy", strategy_names, default=list(strategy_names))
-    df_filtered = df[df['Strategy'].isin(selected_strategies)]
+if response.status_code == 200:
+    trades = response.json()
+    df = pd.DataFrame(trades)
 
-    st.subheader("🔍 Overview")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Trades", len(df_filtered))
-    with col2:
-        st.metric("Total P/L", f"${df_filtered['P/L'].sum():,.2f}")
-    with col3:
-        st.metric("Win Rate", f"{(df_filtered['P/L'] > 0).mean() * 100:.2f}%")
+    # Strategy metrics
+    st.subheader("💰 Strategy Performance")
+    cols = st.columns(len(df))
+    for idx, row in df.iterrows():
+        with cols[idx]:
+            st.metric(
+                label=row["strategy"],
+                value=f"${row['net_pl']:,.2f}",
+                delta=f"Tax: ${row['tax_paid']:,.2f}"
+            )
 
-    if 'Open Date' in df_filtered.columns:
-        pl_df = df_filtered.groupby('Open Date')['P/L'].sum().cumsum().reset_index()
-        fig = px.line(pl_df, x='Open Date', y='P/L', title="📈 Cumulative P/L Over Time")
-        st.plotly_chart(fig, use_container_width=True)
+    # Detailed table
+    st.subheader("📋 Detailed Results")
+    st.dataframe(
+        df.style.format(
+            {"gross_pl": "${:,.2f}", "tax_paid": "${:,.2f}", "net_pl": "${:,.2f}"}
+        )
+    )
 
-    st.subheader("📆 Monthly P/L")
-    if 'Open Date' in df_filtered.columns:
-        df_filtered['Month'] = df_filtered['Open Date'].dt.to_period('M').astype(str)
-        monthly = df_filtered.groupby('Month')['P/L'].sum().reset_index()
-        fig = px.bar(monthly, x='Month', y='P/L', title="Monthly Profit/Loss", text_auto=True)
-        st.plotly_chart(fig, use_container_width=True)
+    # Totals
+    st.subheader("📊 Summary")
+    total_gross = df["gross_pl"].sum()
+    total_tax = df["tax_paid"].sum()
+    total_net = df["net_pl"].sum()
 
-    st.subheader("📋 Strategy Breakdown")
-    strategy_table = df_filtered.groupby('Strategy').agg({
-        'P/L': ['sum', 'mean', 'count']
-    })
-    strategy_table.columns = ['Total P/L', 'Avg P/L', 'Trades']
-    st.dataframe(strategy_table.sort_values("Total P/L", ascending=False))
-
-    st.download_button("Download Filtered CSV", data=df_filtered.to_csv(index=False), file_name="filtered_trade_log.csv")
-
+    st.write(f"**Total Gross P/L:** ${total_gross:,.2f}")
+    st.write(f"**Total Tax Paid:** ${total_tax:,.2f}")
+    st.write(f"**Total Net P/L:** ${total_net:,.2f}")
 else:
-    st.info("Upload a CSV file to see strategy insights.")
+    st.error("Backend API call failed. Make sure FastAPI server is running.")
