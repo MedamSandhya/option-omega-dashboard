@@ -79,7 +79,20 @@ if uploaded_file is not None:
             # Reorder columns
             summary = summary[["strategy", "Gross_PL", "Commissions", "Tax_Paid", "Net_PL"]]
 
-            # Show results
+            # 🔹 Overall totals
+            total_gross = summary["Gross_PL"].sum()
+            total_comm = summary["Commissions"].sum()
+            total_tax = summary["Tax_Paid"].sum()
+            total_net = summary["Net_PL"].sum()
+
+            st.subheader("📊 Overall Dashboard")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Gross P/L", f"${total_gross:,.2f}")
+            col2.metric("Commissions Paid", f"${total_comm:,.2f}")
+            col3.metric("Tax Paid", f"${total_tax:,.2f}")
+            col4.metric("Net P/L", f"${total_net:,.2f}")
+
+            # 🔹 Show strategy-level results
             st.subheader("📌 Strategy-Level Summary")
             st.dataframe(summary.style.format({
                 "Gross_PL": "${:,.2f}",
