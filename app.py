@@ -3,9 +3,54 @@ import pandas as pd
 import requests
 import io
 
+# === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
-st.title("📊 Option Omega Strategy Dashboard")
+# === CUSTOM CSS (✨ new) ===
+st.markdown("""
+    <style>
+    body {
+        background-color: #ffffff;
+    }
+    .dashboard-title {
+        font-size: 36px;
+        font-weight: 800;
+        color: #f97316;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .sub-title {
+        font-size: 18px;
+        color: #555;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .kpi-card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .kpi-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #16a34a;
+    }
+    .kpi-label {
+        font-size: 14px;
+        color: #888;
+    }
+    .dataframe th {
+        background-color: #f97316 !important;
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# === TITLES (✨ new, replaces st.title) ===
+st.markdown("<div class='dashboard-title'>📊 Option Omega Strategy Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Advanced Options Strategies Performance Dashboard</div>", unsafe_allow_html=True)
 
 # User input: tax rate
 tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=35.0) / 100
@@ -85,15 +130,19 @@ if uploaded_file is not None:
             total_tax = summary["Tax_Paid"].sum()
             total_net = summary["Net_PL"].sum()
 
-            st.subheader("📊 Overall Dashboard")
+            # === KPI CARDS (✨ new, replaces st.metric) ===
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Gross P/L", f"${total_gross:,.2f}")
-            col2.metric("Commissions Paid", f"${total_comm:,.2f}")
-            col3.metric("Tax Paid", f"${total_tax:,.2f}")
-            col4.metric("Net P/L", f"${total_net:,.2f}")
+            with col1:
+                st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
+            with col3:
+                st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
+            with col4:
+                st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
 
             # 🔹 Show strategy-level results
-            st.subheader("📌 Strategy-Level Summary")
+            st.markdown("### 📌 Strategy-Level Summary")
             st.dataframe(summary.style.format({
                 "Gross_PL": "${:,.2f}",
                 "Commissions": "${:,.2f}",
