@@ -18,15 +18,43 @@ if uploaded_file is not None:
         # Read CSV
         df = pd.read_csv(uploaded_file)
 
-        # Normalize columns
+        # Normalize column names
         df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
-        # Ensure required columns
-        if "p/l" not in df.columns or "strategy" not in df.columns:
-            st.error("CSV must contain at least 'Strategy' and 'P/L' columns")
+        # Ensure we have a date column
+        if "date_opened" in df.columns:
+            df["date_opened"] = pd.to_datetime(df["date_opened"], errors="coerce")
+            date_col = "date_opened"
+        elif "exit_date" in df.columns:
+            df["exit_date"] = pd.to_datetime(df["exit_date"], errors="coerce")
+            date_col = "exit_date"
         else:
-            # Rename and calculate commissions
-            df = df.rename(columns={"p/l": "gross_pl"})
+            st.error("CSV must contain a 'Date Opened' or 'Exit Date' column for filtering.")
+            st.stop()
+
+        # 🔹 Date filter inputs
+        min_date = df[date_col].min().date()
+        max_date = df[date_col].max().date()
+        start_date, end_date = st.date_input(
+            "Select Date Range",
+            [min_date, max_date],
+            min_value=min_date,
+            max_value=max_date
+        )
+
+        # Apply date filter
+        mask = (df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)
+        df = df.loc[mask]
+
+        # Ensure required columns
+        if "p/l" not in df.columns and "gross_pl" not in df.columns:
+            st.error("CSV must contain at least 'Strategy' and 'P/L' (or Gross_PL) columns")
+        else:
+            # Rename if needed
+            if "p/l" in df.columns:
+                df = df.rename(columns={"p/l": "gross_pl"})
+
+            # Handle commissions
             if "opening_commissions_+_fees" not in df.columns:
                 df["opening_commissions_+_fees"] = 0
             if "closing_commissions_+_fees" not in df.columns:
@@ -45,7 +73,6 @@ if uploaded_file is not None:
             # Tax (only if profit > 0)
             summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
 
-            # Net P/L after tax
             # Net P/L after commissions AND tax
             summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
 
