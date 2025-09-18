@@ -144,6 +144,36 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+import yfinance as yf
+
+# === STOCK TICKER (Dynamic with yfinance) ===
+def get_prices(symbols):
+    prices = {}
+    for sym in symbols:
+        try:
+            ticker = yf.Ticker(sym)
+            data = ticker.history(period="1d", interval="1m")
+            if not data.empty:
+                last_price = round(data["Close"].iloc[-1], 2)
+                prices[sym] = last_price
+            else:
+                prices[sym] = "N/A"
+        except Exception:
+            prices[sym] = "Err"
+    return prices
+
+symbols = ["AAPL", "MSFT", "TSLA", "NVDA", "^GSPC"]  # ^GSPC = S&P 500
+prices = get_prices(symbols)
+
+st.markdown(f"""
+<div style="background:#ffffff; padding:10px 0; border-radius:12px; margin-bottom:20px;
+            box-shadow:0 4px 8px rgba(0,0,0,0.05); overflow:hidden;">
+  <marquee behavior="scroll" direction="left" scrollamount="6" style="font-size:16px; font-weight:600; color:#f97316;">
+    {" &nbsp;&nbsp;|&nbsp;&nbsp; ".join([f"📈 {sym}: ${price}" for sym, price in prices.items()])}
+  </marquee>
+</div>
+""", unsafe_allow_html=True)
+
 # === INPUT SECTION ===
 col1, col2 = st.columns([1, 2])
 with col1:
