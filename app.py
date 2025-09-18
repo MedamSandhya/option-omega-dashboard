@@ -36,7 +36,7 @@ st.markdown("""
     .navbar-title {
         font-size: 22px;
         font-weight: 800;
-        color: #f97316;
+        color: #fb923c;
     }
     .navbar-links {
         font-size: 16px;
@@ -71,7 +71,7 @@ st.markdown("""
         font-size: 22px;
         font-weight: 700;
         margin: 10px 0 20px 0;
-        color: #f97316;
+        color: #fb923c;
     }
 
     /* KPI cards */
@@ -131,7 +131,7 @@ st.markdown("""
 # === NAVBAR ===
 st.markdown("""
 <div class="navbar">
-    <div class="navbar-title">📊 Option Omega</div>
+    <div class="navbar-title"> Smart Tax</div>
     <div>
         <span class="navbar-links">Dashboard</span>
         <span class="navbar-links">Strategies</span>
@@ -145,7 +145,7 @@ col1, col2 = st.columns([1, 2])
 with col1:
     tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
 with col2:
-    uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
+    uploaded_file = st.file_uploader("Upload your Option Omega CSV trade log", type="csv")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # === PROCESS CSV ===
@@ -227,7 +227,7 @@ if uploaded_file is not None:
             "Net_PL": "${:,.2f}"
         }))
         csv = summary.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Strategy Summary", csv, "strategy_summary.csv", "text/csv")
+        st.download_button("Download", csv, "strategy_summary.csv", "text/csv")
         st.markdown("</div>", unsafe_allow_html=True)
 
     except Exception as e:
