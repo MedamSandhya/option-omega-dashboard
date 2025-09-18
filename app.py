@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import base64
 
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
@@ -7,7 +8,6 @@ st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 # === CUSTOM CSS ===
 st.markdown("""
     <style>
-    /* Global */
     body, .stApp {
         font-family: 'Poppins', sans-serif;
         background-color: #f8fafc;
@@ -28,11 +28,6 @@ st.markdown("""
         font-size: 24px;
         font-weight: 800;
         color: white;
-    }
-    .navbar-links {
-        color: #fff;
-        font-weight: 500;
-        margin-right: 20px;
     }
 
     /* KPI Cards */
@@ -66,7 +61,7 @@ st.markdown("""
         color: #6b7280;
     }
 
-    /* Table Styling */
+    /* Strategy Table */
     .dataframe th {
         background-color: #f97316 !important;
         color: white !important;
@@ -78,26 +73,36 @@ st.markdown("""
         text-align: center;
         padding: 10px;
     }
-    .dataframe tr:nth-child(even) {
-        background-color: #fef3c7 !important;
+    .dataframe tr {
+        transition: all 0.2s ease-in-out;
     }
     .dataframe tr:hover {
         background-color: #fde68a !important;
+        transform: scale(1.01);
+    }
+
+    /* Download Button */
+    .download-btn {
+        display: inline-block;
+        padding: 12px 22px;
+        margin: 15px 0;
+        background-color: #f97316;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease-in-out;
+    }
+    .download-btn:hover {
+        background-color: #ea580c;
+        transform: scale(1.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# === NAVBAR ===
-st.markdown("""
-<div class="navbar">
-    <div class="navbar-title">📊 Option Omega Strategy Dashboard</div>
-    <div>
-        <span class="navbar-links">Dashboard</span>
-        <span class="navbar-links">Strategies</span>
-        <span class="navbar-links">About</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# === NAVBAR with real navigation ===
+st.markdown("<div class='navbar'><div class='navbar-title'>📊 Option Omega Strategy Dashboard</div></div>", unsafe_allow_html=True)
+page = st.radio("", ["Dashboard", "Strategies", "About"], horizontal=True)
 
 # === INPUTS ===
 tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
@@ -154,22 +159,39 @@ if uploaded_file is not None:
         total_tax = summary["Tax_Paid"].sum()
         total_net = summary["Net_PL"].sum()
 
-        # === KPI CARDS ===
-        st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        # === PAGE ROUTING ===
+        if page == "Dashboard":
+            st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        # === TABLE ===
-        st.markdown("### 📌 Strategy-Level Summary")
-        st.dataframe(summary.style.format({
-            "Gross_PL": "${:,.2f}",
-            "Commissions": "${:,.2f}",
-            "Tax_Paid": "${:,.2f}",
-            "Net_PL": "${:,.2f}"
-        }))
+        elif page == "Strategies":
+            st.markdown("### 📌 Strategy-Level Summary")
 
+            # Download CSV button
+            csv_export = summary.to_csv(index=False).encode("utf-8")
+            b64 = base64.b64encode(csv_export).decode()
+            st.markdown(f"<a class='download-btn' href='data:file/csv;base64,{b64}' download='strategy_summary.csv'>⬇ Download CSV</a>", unsafe_allow_html=True)
+
+            st.dataframe(summary.style.format({
+                "Gross_PL": "${:,.2f}",
+                "Commissions": "${:,.2f}",
+                "Tax_Paid": "${:,.2f}",
+                "Net_PL": "${:,.2f}"
+            }))
+
+        elif page == "About":
+            st.subheader("ℹ️ About This Dashboard")
+            st.markdown("""
+            This dashboard is built for **Option Omega traders** to analyze performance across strategies.  
+            - Upload your trade logs (CSV).  
+            - See both **overall results** and **strategy-level breakdowns**.  
+            - Track **Gross P/L, Commissions, Taxes, Net P/L** over any date range.  
+
+            Designed with ❤️ to help traders make data-driven decisions.
+            """)
     except Exception as e:
         st.error(f"Error processing file: {e}")
