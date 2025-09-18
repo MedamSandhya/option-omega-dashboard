@@ -67,19 +67,18 @@ st.markdown("""
         color: #6b7280;
     }
 
-    /* File uploader + Tax input */
+    /* File uploader */
     .stFileUploader {
-        background: #ffffff;
-        border: 2px dashed #d1d5db;
-        border-radius: 12px;
-        padding: 20px;
+        background: #ffffff !important;
+        border: 2px dashed #f97316 !important;
+        border-radius: 14px !important;
+        padding: 25px !important;
+        color: #374151 !important;
+        text-align: center;
     }
-    div[data-baseweb="input"] > div {
-        background-color: #ffedd5 !important;
-        border-radius: 8px !important;
-    }
-    input {
-        color: #111827 !important;
+    .stFileUploader label {
+        color: #f97316 !important;
+        font-weight: 600 !important;
     }
 
     /* Section Titles */
