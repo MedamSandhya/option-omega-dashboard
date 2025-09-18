@@ -4,79 +4,98 @@ import pandas as pd
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
-# === GLOBAL CSS ===
+# === CUSTOM CSS ===
 st.markdown("""
     <style>
-    /* Global Font & Background */
+    /* Global */
     body, .stApp {
-        font-family: 'Inter', sans-serif;
-        background-color: #f9fafb;
+        font-family: 'Poppins', sans-serif;
+        background-color: #f8fafc;
+        color: #111827;
     }
-    /* Header */
-    .header {
+
+    /* Navbar */
+    .navbar {
         background: linear-gradient(90deg, #f97316, #fb923c);
-        padding: 20px;
+        padding: 18px;
         border-radius: 12px;
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 25px;
     }
-    .header-title {
-        font-size: 34px;
+    .navbar-title {
+        font-size: 24px;
         font-weight: 800;
         color: white;
     }
-    .header-sub {
-        font-size: 16px;
-        color: #fef3c7;
+    .navbar-links {
+        color: #fff;
+        font-weight: 500;
+        margin-right: 20px;
     }
+
     /* KPI Cards */
+    .kpi-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 25px;
+    }
     .kpi-card {
+        flex: 1;
         background: white;
         padding: 25px;
         border-radius: 14px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease-in-out;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        margin: 0 10px;
+        transition: all 0.2s ease-in-out;
     }
     .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
     .kpi-value {
         font-size: 28px;
         font-weight: 700;
-        color: #16a34a;
         margin-bottom: 6px;
+        color: #16a34a;
     }
     .kpi-label {
         font-size: 14px;
         color: #6b7280;
     }
-    /* Data Table */
+
+    /* Table Styling */
     .dataframe th {
         background-color: #f97316 !important;
         color: white !important;
-        text-align: center !important;
+        text-align: center;
+        font-size: 14px;
         padding: 10px;
     }
     .dataframe td {
-        padding: 10px;
         text-align: center;
+        padding: 10px;
     }
     .dataframe tr:nth-child(even) {
-        background-color: #fef9f6 !important;
+        background-color: #fef3c7 !important;
     }
     .dataframe tr:hover {
-        background-color: #fef3c7 !important;
+        background-color: #fde68a !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# === HEADER ===
+# === NAVBAR ===
 st.markdown("""
-<div class="header">
-    <div class="header-title">Option Omega Strategy Dashboard</div>
-    <div class="header-sub">Professional Options Strategy Performance Analytics</div>
+<div class="navbar">
+    <div class="navbar-title">📊 Option Omega Strategy Dashboard</div>
+    <div>
+        <span class="navbar-links">Dashboard</span>
+        <span class="navbar-links">Strategies</span>
+        <span class="navbar-links">About</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -103,20 +122,14 @@ if uploaded_file is not None:
         # Date filter
         min_date = df[date_col].min().date()
         max_date = df[date_col].max().date()
-        start_date, end_date = st.date_input(
-            "Select Date Range",
-            [min_date, max_date],
-            min_value=min_date,
-            max_value=max_date
-        )
-        mask = (df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)
-        df = df.loc[mask]
+        start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
 
         # Normalize columns
         if "p/l" in df.columns:
             df = df.rename(columns={"p/l": "gross_pl"})
         if "gross_pl" not in df.columns:
-            st.error("CSV must contain a 'P/L' or 'Gross_PL' column")
+            st.error("CSV must contain 'P/L' or 'Gross_PL'")
             st.stop()
 
         if "opening_commissions_+_fees" not in df.columns:
@@ -142,15 +155,12 @@ if uploaded_file is not None:
         total_net = summary["Net_PL"].sum()
 
         # === KPI CARDS ===
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # === TABLE ===
         st.markdown("### 📌 Strategy-Level Summary")
