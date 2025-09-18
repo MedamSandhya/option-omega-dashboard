@@ -13,48 +13,48 @@ st.markdown("""
         color: #111827;
     }
 
-    /* Navbar */
-    .navbar {
-        background: #ffffff;
-        padding: 16px 28px;
-        border-radius: 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    }
-    .navbar-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #f97316;
-    }
-    .navbar-links {
-        font-size: 16px;
-        font-weight: 600;
-        margin-left: 20px;
-        cursor: pointer;
-        color: #374151;
-    }
-    .navbar-links:hover {
-        color: #f97316;
+    /* Force all input widgets to white */
+    div[data-baseweb="input"] > div,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stFileUploaderDropzone"],
+    div[data-testid="stDateInput"] input {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        padding: 8px 12px !important;
     }
 
-    /* White Section Card */
-    .section-card {
-        background: #ffffff;
-        padding: 28px;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-        margin-bottom: 25px;
+    /* File uploader dropzone */
+    div[data-testid="stFileUploaderDropzone"] {
+        background: #ffffff !important;
+        border: 2px dashed #f97316 !important;
+        border-radius: 14px !important;
+        color: #374151 !important;
+        text-align: center;
+        padding: 20px;
+    }
+    div[data-testid="stFileUploaderDropzone"] p {
+        color: #f97316 !important;
+        font-weight: 600 !important;
     }
 
-    /* KPI Cards */
-    .kpi-container {
-        display: flex;
-        justify-content: space-between;
-        margin: 25px 0;
+    /* Date input container */
+    div[data-testid="stDateInput"] {
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        padding: 6px;
     }
+
+    /* Number input container */
+    div[data-testid="stNumberInput"] {
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        padding: 6px;
+    }
+
+    /* KPI cards */
     .kpi-card {
         flex: 1;
         background: #ffffff;
@@ -64,78 +64,14 @@ st.markdown("""
         box-shadow: 0 6px 18px rgba(0,0,0,0.06);
         margin: 0 12px;
     }
-    .kpi-value {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 6px;
-        color: #16a34a;
-    }
-    .kpi-label {
-        font-size: 14px;
-        font-weight: 500;
-        color: #6b7280;
-    }
 
-    /* File uploader */
-    .stFileUploader {
-        background: #ffffff !important;
-        border: 2px dashed #f97316 !important;
-        border-radius: 14px !important;
-        padding: 25px !important;
-        color: #374151 !important;
-        text-align: center;
-    }
-    .stFileUploader label {
-        color: #f97316 !important;
-        font-weight: 600 !important;
-    }
-    div[data-testid="stFileUploaderDropzone"] {
-        background: #ffffff !important;
-        border: none !important;
-    }
-
-    /* Section Titles */
-    .section-title {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 18px;
-        color: #f97316;
-    }
-
-    /* Data Table */
-    .stDataFrame {
-        background: #ffffff !important;
-        border-radius: 14px;
-        padding: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    .dataframe th {
-        background-color: #f97316 !important;
-        color: white !important;
-        text-align: center;
-        font-size: 14px;
-        padding: 10px;
-    }
-    .dataframe td {
-        text-align: center;
-        padding: 10px;
-        background: #ffffff !important;
-    }
-    .dataframe tr:hover {
-        background-color: #fff7ed !important;
-    }
-
-    /* Download Button */
-    .stDownloadButton button {
-        background: #fb923c;
-        color: white !important;
-        font-weight: 600;
-        padding: 12px 24px;
-        border-radius: 10px;
-        border: none;
-    }
-    .stDownloadButton button:hover {
-        background: #f97316;
+    /* Section white card */
+    .section-card {
+        background: #ffffff;
+        padding: 28px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
     }
     </style>
 """, unsafe_allow_html=True)
