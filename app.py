@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import base64
 
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
@@ -7,97 +8,137 @@ st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 # === CUSTOM CSS ===
 st.markdown("""
     <style>
-    /* Global */
+    /* Neumorphic Theme */
     body, .stApp {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f8fafc;
-        color: #111827;
+        font-family: 'Inter', sans-serif;
+        background-color: #ffffff;
+        color: #1f2937;
     }
 
-    /* Navbar */
-    .navbar {
-        background: linear-gradient(90deg, #f97316, #fb923c);
-        padding: 18px;
-        border-radius: 12px;
+    :root {
+      --neu-bg: #ffffff;
+      --neu-shadow-light: #ffffff;
+      --neu-shadow-dark: #e0e0e0;
+      --brand-accent: #e6934e;
+      --text-strong: #1f2937;
+      --text-muted: #9ca3af;
+    }
+
+    .neu-card {
+        background: var(--neu-bg);
+        border-radius: 20px;
+        box-shadow: 10px 10px 20px var(--neu-shadow-dark),
+                    -10px -10px 20px var(--neu-shadow-light);
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    .neu-nav {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 25px;
+        background: var(--neu-bg);
+        border-radius: 16px;
+        box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+                    -6px -6px 12px var(--neu-shadow-light);
+        padding: 15px 30px;
+        margin-bottom: 30px;
     }
-    .navbar-title {
+
+    .neu-nav-title {
         font-size: 24px;
-        font-weight: 800;
-        color: white;
+        font-weight: bold;
+        color: var(--brand-accent);
     }
-    .navbar-links {
-        color: #fff;
-        font-weight: 500;
-        margin-right: 20px;
+
+    .neu-nav-links span {
+        margin: 0 15px;
+        cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        color: var(--text-strong);
+        box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+                    -3px -3px 6px var(--neu-shadow-light);
+    }
+
+    .neu-nav-links span:hover {
+        box-shadow: inset 3px 3px 6px var(--neu-shadow-dark),
+                    inset -3px -3px 6px var(--neu-shadow-light);
+        color: var(--brand-accent);
     }
 
     /* KPI Cards */
     .kpi-container {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 25px;
     }
     .kpi-card {
         flex: 1;
-        background: white;
-        padding: 25px;
+        margin: 0 10px;
+        background: var(--neu-bg);
         border-radius: 14px;
         text-align: center;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-        margin: 0 10px;
-        transition: all 0.2s ease-in-out;
+        padding: 25px;
+        box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+                    -6px -6px 12px var(--neu-shadow-light);
+        transition: all 0.2s ease;
     }
     .kpi-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
     .kpi-value {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 700;
         margin-bottom: 6px;
         color: #16a34a;
     }
     .kpi-label {
         font-size: 14px;
-        color: #6b7280;
+        color: var(--text-muted);
     }
 
     /* Table Styling */
     .dataframe th {
-        background-color: #f97316 !important;
+        background-color: var(--brand-accent) !important;
         color: white !important;
         text-align: center;
-        font-size: 14px;
         padding: 10px;
     }
     .dataframe td {
         text-align: center;
         padding: 10px;
     }
-    .dataframe tr:nth-child(even) {
-        background-color: #fef3c7 !important;
+    .dataframe tr {
+        transition: all 0.2s ease-in-out;
     }
     .dataframe tr:hover {
-        background-color: #fde68a !important;
+        background-color: #fef3c7 !important;
+        transform: scale(1.01);
+    }
+
+    /* Download Button */
+    .download-btn {
+        display: inline-block;
+        padding: 12px 22px;
+        margin: 15px 0;
+        background-color: var(--brand-accent);
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease-in-out;
+    }
+    .download-btn:hover {
+        background-color: #ea580c;
+        transform: scale(1.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# === NAVBAR ===
-st.markdown("""
-<div class="navbar">
-    <div class="navbar-title">📊 Option Omega Strategy Dashboard</div>
-    <div>
-        <span class="navbar-links">Dashboard</span>
-        <span class="navbar-links">Strategies</span>
-        <span class="navbar-links">About</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# === NAVBAR (interactive via radio) ===
+st.markdown("<div class='neu-nav'><div class='neu-nav-title'>Apex Spreads</div></div>", unsafe_allow_html=True)
+page = st.radio("", ["Dashboard", "Strategies", "About"], horizontal=True)
 
 # === INPUTS ===
 tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
@@ -154,22 +195,37 @@ if uploaded_file is not None:
         total_tax = summary["Tax_Paid"].sum()
         total_net = summary["Net_PL"].sum()
 
-        # === KPI CARDS ===
-        st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        # === PAGE CONTENT ===
+        if page == "Dashboard":
+            st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        # === TABLE ===
-        st.markdown("### 📌 Strategy-Level Summary")
-        st.dataframe(summary.style.format({
-            "Gross_PL": "${:,.2f}",
-            "Commissions": "${:,.2f}",
-            "Tax_Paid": "${:,.2f}",
-            "Net_PL": "${:,.2f}"
-        }))
+        elif page == "Strategies":
+            st.markdown("### 📌 Strategy-Level Summary")
+            csv_export = summary.to_csv(index=False).encode("utf-8")
+            b64 = base64.b64encode(csv_export).decode()
+            st.markdown(f"<a class='download-btn' href='data:file/csv;base64,{b64}' download='strategy_summary.csv'>⬇ Download CSV</a>", unsafe_allow_html=True)
+            st.dataframe(summary.style.format({
+                "Gross_PL": "${:,.2f}",
+                "Commissions": "${:,.2f}",
+                "Tax_Paid": "${:,.2f}",
+                "Net_PL": "${:,.2f}"
+            }))
+
+        elif page == "About":
+            st.markdown("### ℹ️ About This Dashboard")
+            st.markdown("""
+            **Apex Spreads** is a professional options performance dashboard.  
+            - Upload trade logs and track results  
+            - Analyze strategy-level profitability  
+            - Adjust tax rates & commissions for real-world net P/L  
+
+            Built for traders who want a clean, modern analytics platform.
+            """)
 
     except Exception as e:
         st.error(f"Error processing file: {e}")
