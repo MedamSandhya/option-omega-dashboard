@@ -9,8 +9,9 @@ st.markdown("""
     <style>
     body, .stApp {
         font-family: 'Poppins', sans-serif;
-        background-color: #f3f4f6; /* light gray page background */
+        background-color: #f3f4f6;
         color: #111827;
+        scroll-behavior: smooth; /* smooth scroll for anchors */
     }
 
     /* White card containers */
@@ -32,6 +33,9 @@ st.markdown("""
         align-items: center;
         margin-bottom: 25px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
     .navbar-title {
         font-size: 22px;
@@ -50,7 +54,7 @@ st.markdown("""
         color: #f97316;
     }
 
-    /* Inputs & uploader force light theme */
+    /* Inputs & uploader */
     .stTextInput, .stNumberInput, .stDateInput, .stFileUploader {
         background-color: #ffffff !important;
         color: #111827 !important;
@@ -126,15 +130,8 @@ st.markdown("""
     .stDownloadButton button:hover {
         background: #f97316;
     }
-
-    /* Remove empty white bars */
-    .block-container {
-        padding-top: 0rem;
-        padding-bottom: 0rem;
-    }
     </style>
 """, unsafe_allow_html=True)
-
 
 # === NAVBAR ===
 st.markdown("""
@@ -148,12 +145,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # === INPUT SECTION ===
-with st.container():
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
-    with col2:
-        uploaded_file = st.file_uploader("Upload your Option Omega CSV trade log", type="csv")
+col1, col2 = st.columns([1, 2])
+with col1:
+    tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
+with col2:
+    uploaded_file = st.file_uploader("Upload your Option Omega CSV trade log", type="csv")
 
 # === PROCESS CSV ===
 if uploaded_file is not None:
@@ -224,7 +220,7 @@ if uploaded_file is not None:
             )
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # === STRATEGIES SECTION ===
+        # === STRATEGY SECTION ===
         st.markdown("<div id='strategies'></div>", unsafe_allow_html=True)
         st.markdown("<div class='card'><div class='section-title'>Strategy Performance Summary</div>", unsafe_allow_html=True)
         st.dataframe(summary.style.format({
