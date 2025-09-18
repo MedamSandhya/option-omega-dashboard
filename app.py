@@ -9,7 +9,7 @@ st.markdown("""
     <style>
     body, .stApp {
         font-family: 'Poppins', sans-serif;
-        background-color: #f9fafb;
+        background-color: #f3f4f6; /* subtle gray page background */
         color: #111827;
     }
 
@@ -40,20 +40,28 @@ st.markdown("""
         color: #f97316;
     }
 
-    /* KPI Cards */
+    /* Card Wrapper */
+    .card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 25px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    /* KPI Cards inside white section */
     .kpi-container {
         display: flex;
         justify-content: space-between;
-        margin: 25px 0;
+        gap: 16px;
     }
     .kpi-card {
         flex: 1;
-        background: white;
+        background: #ffffff;
         padding: 24px;
         border-radius: 16px;
         text-align: center;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-        margin: 0 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .kpi-value {
         font-size: 28px;
@@ -73,7 +81,7 @@ st.markdown("""
         border: 2px dashed #f97316 !important;
         border-radius: 14px !important;
         padding: 25px !important;
-        color: #374151 !important;
+        color: #111827 !important;
         text-align: center;
     }
     .stFileUploader label {
@@ -85,7 +93,7 @@ st.markdown("""
     .section-title {
         font-size: 22px;
         font-weight: 700;
-        margin: 30px 0 15px 0;
+        margin-bottom: 15px;
         color: #f97316;
     }
 
@@ -100,6 +108,7 @@ st.markdown("""
     .dataframe td {
         text-align: center;
         padding: 10px;
+        color: #111827 !important;
     }
     .dataframe tr:hover {
         background-color: #fff7ed !important;
@@ -131,13 +140,17 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# === INPUTS ===
-col1, col2 = st.columns([1, 2])
-with col1:
-    tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
-with col2:
-    uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
+# === INPUTS SECTION (Card) ===
+with st.container():
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
+    with col2:
+        uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
+    st.markdown("</div>", unsafe_allow_html=True)
 
+# === PROCESS FILE ===
 if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file)
@@ -157,7 +170,9 @@ if uploaded_file is not None:
         # Date filter
         min_date = df[date_col].min().date()
         max_date = df[date_col].max().date()
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        st.markdown("</div>", unsafe_allow_html=True)
         df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
 
         # Normalize columns
@@ -189,7 +204,8 @@ if uploaded_file is not None:
         total_tax = summary["Tax_Paid"].sum()
         total_net = summary["Net_PL"].sum()
 
-        # === KPI CARDS ===
+        # === KPI SECTION ===
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Dashboard Overview</div>", unsafe_allow_html=True)
         st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
         st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
@@ -197,8 +213,10 @@ if uploaded_file is not None:
         st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # === STRATEGY SUMMARY ===
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Strategy Performance Summary</div>", unsafe_allow_html=True)
         st.dataframe(summary.style.format({
             "Gross_PL": "${:,.2f}",
@@ -206,8 +224,10 @@ if uploaded_file is not None:
             "Tax_Paid": "${:,.2f}",
             "Net_PL": "${:,.2f}"
         }))
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        # === DOWNLOAD BUTTON ===
+        # === DOWNLOAD BUTTON (inside card) ===
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         csv = summary.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Download Strategy Summary",
@@ -215,6 +235,7 @@ if uploaded_file is not None:
             file_name="strategy_summary.csv",
             mime="text/csv"
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Error processing file: {e}")
