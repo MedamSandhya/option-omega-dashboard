@@ -1,243 +1,197 @@
 import streamlit as st
 import pandas as pd
-import base64
 
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
-# === MODE TOGGLE ===
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
+# === DARK/LIGHT MODE ===
+dark_mode = st.sidebar.toggle("🌙 Dark Mode")
 
-mode = st.toggle("🌙 Dark Mode", value=st.session_state.dark_mode)
-st.session_state.dark_mode = mode
+# Define colors for light/dark
+if dark_mode:
+    bg_color = "#1e293b"
+    card_color = "#0f172a"
+    text_color = "#f1f5f9"
+    accent = "#f97316"
+else:
+    bg_color = "#f8fafc"
+    card_color = "white"
+    text_color = "#111827"
+    accent = "#f97316"
 
-# === THEME CSS ===
-light_theme = """
-:root {
-    --bg: #f9fafb;
-    --card: #ffffff;
-    --text: #111827;
-    --muted: #6b7280;
-    --accent: #f97316;
-    --success: #16a34a;
-}
-"""
-
-dark_theme = """
-:root {
-    --bg: #1e293b;
-    --card: #0f172a;
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --accent: #fb923c;
-    --success: #22c55e;
-}
-"""
-
-theme = dark_theme if st.session_state.dark_mode else light_theme
-
+# === CUSTOM CSS ===
 st.markdown(f"""
-<style>
-{theme}
+    <style>
+    body, .stApp {{
+        background-color: {bg_color};
+        color: {text_color};
+        font-family: 'Inter', sans-serif;
+    }}
 
-body, .stApp {{
-    background-color: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-}}
+    /* Navbar */
+    .navbar {{
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: linear-gradient(90deg, {accent}, #fb923c);
+        padding: 18px 30px;
+        border-radius: 0 0 14px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }}
+    .navbar-title {{
+        font-size: 22px;
+        font-weight: 800;
+        color: white;
+    }}
+    .navbar-links span {{
+        margin-left: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        color: white;
+    }}
+    .navbar-links span:hover {{
+        text-decoration: underline;
+    }}
 
-.navbar {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 30px;
-    margin-bottom: 30px;
-    background: var(--card);
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}}
-.navbar-title {{
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--accent);
-}}
-.navbar-links a {{
-    margin-left: 25px;
-    font-weight: 500;
-    cursor: pointer;
-    color: var(--text);
-    text-decoration: none;
-}}
-.navbar-links a:hover {{
-    color: var(--accent);
-}}
+    /* KPI Cards */
+    .kpi-container {{
+        display: flex;
+        gap: 20px;
+        margin: 25px 0;
+    }}
+    .kpi-card {{
+        flex: 1;
+        background: {card_color};
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.2s ease-in-out;
+    }}
+    .kpi-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }}
+    .kpi-value {{
+        font-size: 26px;
+        font-weight: 700;
+        color: #16a34a;
+    }}
+    .kpi-label {{
+        font-size: 14px;
+        color: #9ca3af;
+    }}
 
-.section {{
-    margin: 50px 0;
-    padding: 30px;
-    background: var(--card);
-    border-radius: 14px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-}}
+    /* Data Table */
+    .dataframe th {{
+        background-color: {accent} !important;
+        color: white !important;
+        padding: 12px;
+        text-align: center;
+    }}
+    .dataframe td {{
+        text-align: center;
+        padding: 10px;
+    }}
+    .dataframe tr:hover {{
+        background-color: #fde68a !important;
+    }}
 
-.kpi-container {{
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}}
-.kpi-card {{
-    flex: 1;
-    margin: 0 12px;
-    background: var(--card);
-    border-radius: 14px;
-    padding: 25px;
-    text-align: center;
-    box-shadow: 6px 6px 12px rgba(0,0,0,0.06);
-    transition: all 0.2s ease-in-out;
-}}
-.kpi-card:hover {{
-    transform: translateY(-6px);
-}}
-.kpi-value {{
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--success);
-}}
-.kpi-label {{
-    font-size: 14px;
-    color: var(--muted);
-}}
-
-.dataframe tr:hover {{
-    background-color: rgba(249, 115, 22, 0.1) !important;
-    transform: scale(1.01);
-}}
-
-.download-btn {{
-    display: inline-block;
-    padding: 10px 20px;
-    margin: 15px 0;
-    background-color: var(--accent);
-    color: white;
-    font-weight: bold;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}}
-.download-btn:hover {{
-    background-color: #ea580c;
-    transform: scale(1.05);
-}}
-</style>
+    /* Download Button */
+    .download-btn {{
+        background: {accent};
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+    }}
+    .download-btn:hover {{
+        background: #fb923c;
+    }}
+    </style>
 """, unsafe_allow_html=True)
 
 # === NAVBAR ===
 st.markdown("""
 <div class="navbar">
-  <div class="navbar-title">📊 Option Omega</div>
-  <div class="navbar-links">
-    <a href="#dashboard">Dashboard</a>
-    <a href="#strategies">Strategies</a>
-    <a href="#about">About</a>
-  </div>
+    <div class="navbar-title">📊 Option Omega</div>
+    <div class="navbar-links">
+        <span onclick="window.scrollTo(0, 300)">Dashboard</span>
+        <span onclick="window.scrollTo(0, 800)">Strategies</span>
+        <span onclick="window.scrollTo(0, document.body.scrollHeight)">About</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-# === INPUTS ===
+# === MAIN CONTENT ===
 tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
 uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
-        df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
-        if "date_opened" in df.columns:
-            df["date_opened"] = pd.to_datetime(df["date_opened"], errors="coerce")
-            date_col = "date_opened"
-        elif "exit_date" in df.columns:
-            df["exit_date"] = pd.to_datetime(df["exit_date"], errors="coerce")
-            date_col = "exit_date"
-        else:
-            st.error("CSV must contain a 'Date Opened' or 'Exit Date' column")
-            st.stop()
+    if "date_opened" in df.columns:
+        df["date_opened"] = pd.to_datetime(df["date_opened"], errors="coerce")
+        date_col = "date_opened"
+    else:
+        st.error("CSV must have 'Date Opened'")
+        st.stop()
 
-        # Date filter
-        min_date = df[date_col].min().date()
-        max_date = df[date_col].max().date()
-        start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
-        df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
+    min_date, max_date = df[date_col].min().date(), df[date_col].max().date()
+    start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+    df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
 
-        # Normalize columns
-        if "p/l" in df.columns:
-            df = df.rename(columns={"p/l": "gross_pl"})
-        if "gross_pl" not in df.columns:
-            st.error("CSV must contain 'P/L' or 'Gross_PL'")
-            st.stop()
+    if "p/l" in df.columns:
+        df.rename(columns={"p/l": "gross_pl"}, inplace=True)
 
-        if "opening_commissions_+_fees" not in df.columns:
-            df["opening_commissions_+_fees"] = 0
-        if "closing_commissions_+_fees" not in df.columns:
-            df["closing_commissions_+_fees"] = 0
+    df["commissions_paid"] = df.get("opening_commissions_+_fees", 0) + df.get("closing_commissions_+_fees", 0)
+    df["profit_after_commissions"] = df["gross_pl"] - df["commissions_paid"]
 
-        df["commissions_paid"] = df["opening_commissions_+_fees"] + df["closing_commissions_+_fees"]
-        df["profit_after_commissions"] = df["gross_pl"] - df["commissions_paid"]
+    summary = df.groupby("strategy").agg(
+        Gross_PL=("profit_after_commissions", "sum"),
+        Commissions=("commissions_paid", "sum")
+    ).reset_index()
 
-        summary = df.groupby("strategy").agg(
-            Gross_PL=("profit_after_commissions", "sum"),
-            Commissions=("commissions_paid", "sum")
-        ).reset_index()
+    summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
+    summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
 
-        summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
-        summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
+    # Totals
+    total_gross, total_comm, total_tax, total_net = summary["Gross_PL"].sum(), summary["Commissions"].sum(), summary["Tax_Paid"].sum(), summary["Net_PL"].sum()
 
-        # Totals
-        total_gross = summary["Gross_PL"].sum()
-        total_comm = summary["Commissions"].sum()
-        total_tax = summary["Tax_Paid"].sum()
-        total_net = summary["Net_PL"].sum()
+    # === KPI CARDS ===
+    st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
+    for value, label in [
+        (total_gross, "Gross P/L"),
+        (total_comm, "Commissions"),
+        (total_tax, "Tax Paid"),
+        (total_net, "Net P/L")
+    ]:
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${value:,.2f}</div><div class='kpi-label'>{label}</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        # === Dashboard Section ===
-        st.markdown('<div class="section" id="dashboard">', unsafe_allow_html=True)
-        st.subheader("📊 Dashboard Overview")
-        st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
+    # === STRATEGY TABLE ===
+    st.markdown("## 📌 Strategy-Level Summary")
+    st.dataframe(summary.style.format({
+        "Gross_PL": "${:,.2f}",
+        "Commissions": "${:,.2f}",
+        "Tax_Paid": "${:,.2f}",
+        "Net_PL": "${:,.2f}"
+    }))
 
-        # === Strategies Section ===
-        st.markdown('<div class="section" id="strategies">', unsafe_allow_html=True)
-        st.subheader("📌 Strategy-Level Summary")
-        csv_export = summary.to_csv(index=False).encode("utf-8")
-        b64 = base64.b64encode(csv_export).decode()
-        st.markdown(f"<a class='download-btn' href='data:file/csv;base64,{b64}' download='strategy_summary.csv'>⬇ Download CSV</a>", unsafe_allow_html=True)
-        st.dataframe(summary.style.format({
-            "Gross_PL": "${:,.2f}",
-            "Commissions": "${:,.2f}",
-            "Tax_Paid": "${:,.2f}",
-            "Net_PL": "${:,.2f}"
-        }))
-        st.markdown("</div>", unsafe_allow_html=True)
+    # === DOWNLOAD BUTTON ===
+    csv = summary.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "⬇️ Download Strategy Summary",
+        data=csv,
+        file_name="strategy_summary.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
-        # === About Section ===
-        st.markdown('<div class="section" id="about">', unsafe_allow_html=True)
-        st.subheader("ℹ️ About This Dashboard")
-        st.markdown("""
-        This dashboard is built to analyze **options trading strategies** like a pro.  
-        ✅ Upload your trade logs  
-        ✅ Adjust tax rate & commissions  
-        ✅ See live gross/net performance  
-        ✅ Export results anytime  
-
-        Designed with a modern, professional look — with both **light and dark modes**.
-        """)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
+# === ABOUT ===
+st.markdown("## ℹ️ About")
+st.write("This dashboard is built for analyzing Option Omega strategy performance with taxes, commissions, and net P/L in an intuitive interface.")
