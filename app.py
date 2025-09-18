@@ -4,108 +4,111 @@ import pandas as pd
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
-# === COLORS (Light Mode) ===
-bg_color = "#f8fafc"
-card_color = "white"
-text_color = "#111827"
-accent = "#f97316"
-
-# === CUSTOM CSS ===
-st.markdown(f"""
+# === CUSTOM CSS FOR LIGHT MODE ===
+st.markdown("""
     <style>
-    body, .stApp {{
-        background-color: {bg_color};
-        color: {text_color};
-        font-family: 'Inter', sans-serif;
-    }}
+    /* Global */
+    body, .stApp {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f9fafb;
+        color: #111827;
+    }
 
     /* Navbar */
-    .navbar {{
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        background: linear-gradient(90deg, {accent}, #fb923c);
-        padding: 18px 30px;
-        border-radius: 0 0 14px 14px;
+    .navbar {
+        background: linear-gradient(90deg, #f97316, #fb923c);
+        padding: 18px;
+        border-radius: 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 25px;
-    }}
-    .navbar-title {{
+    }
+    .navbar-title {
         font-size: 22px;
         font-weight: 800;
         color: white;
-    }}
-    .navbar-links span {{
-        margin-left: 20px;
-        cursor: pointer;
-        font-weight: 500;
+    }
+    .navbar-links {
         color: white;
-    }}
-    .navbar-links span:hover {{
+        font-weight: 500;
+        margin-left: 18px;
+        cursor: pointer;
+    }
+    .navbar-links:hover {
         text-decoration: underline;
-    }}
+    }
 
     /* KPI Cards */
-    .kpi-container {{
+    .kpi-container {
         display: flex;
-        gap: 20px;
+        justify-content: space-between;
         margin: 25px 0;
-    }}
-    .kpi-card {{
+    }
+    .kpi-card {
         flex: 1;
-        background: {card_color};
+        background: white;
         padding: 20px;
-        border-radius: 16px;
+        border-radius: 12px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        margin: 0 10px;
         transition: all 0.2s ease-in-out;
-    }}
-    .kpi-card:hover {{
+    }
+    .kpi-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }}
-    .kpi-value {{
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .kpi-value {
         font-size: 26px;
         font-weight: 700;
+        margin-bottom: 6px;
         color: #16a34a;
-    }}
-    .kpi-label {{
+    }
+    .kpi-label {
         font-size: 14px;
         color: #6b7280;
-    }}
+    }
 
-    /* Data Table */
-    .dataframe th {{
-        background-color: {accent} !important;
+    /* Table Styling */
+    .dataframe th {
+        background-color: #f97316 !important;
         color: white !important;
-        padding: 12px;
         text-align: center;
-    }}
-    .dataframe td {{
+        font-size: 14px;
+        padding: 10px;
+    }
+    .dataframe td {
         text-align: center;
         padding: 10px;
-    }}
-    .dataframe tr:nth-child(even) {{
+        color: #111827 !important;
+    }
+    .dataframe tr:nth-child(even) {
         background-color: #fef3c7 !important;
-    }}
-    .dataframe tr:hover {{
+    }
+    .dataframe tr:hover {
         background-color: #fde68a !important;
-    }}
+    }
 
-    /* Download Button */
-    .download-btn {{
-        background: {accent};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-weight: 600;
-        text-decoration: none;
-    }}
-    .download-btn:hover {{
-        background: #fb923c;
-    }}
+    /* Force light inputs */
+    .stTextInput > div > div > input,
+    .stNumberInput input,
+    .stDateInput input,
+    .stFileUploader div div {
+        background-color: white !important;
+        color: #111827 !important;
+        border-radius: 8px !important;
+        border: 1px solid #d1d5db !important;
+        padding: 8px !important;
+    }
+    .stFileUploader label div {
+        background-color: #f3f4f6 !important;
+        color: #111827 !important;
+        border-radius: 8px;
+    }
+    .stFileUploader label span {
+        color: #111827 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -113,85 +116,89 @@ st.markdown(f"""
 st.markdown("""
 <div class="navbar">
     <div class="navbar-title">📊 Option Omega</div>
-    <div class="navbar-links">
-        <span onclick="window.scrollTo(0, 300)">Dashboard</span>
-        <span onclick="window.scrollTo(0, 800)">Strategies</span>
-        <span onclick="window.scrollTo(0, document.body.scrollHeight)">About</span>
+    <div>
+        <span class="navbar-links">Dashboard</span>
+        <span class="navbar-links">Strategies</span>
+        <span class="navbar-links">About</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# === MAIN CONTENT ===
+# === INPUTS ===
 tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
 uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
+if uploaded_file is not None:
+    try:
+        df = pd.read_csv(uploaded_file)
+        df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
-    if "date_opened" in df.columns:
-        df["date_opened"] = pd.to_datetime(df["date_opened"], errors="coerce")
-        date_col = "date_opened"
-    else:
-        st.error("CSV must have 'Date Opened'")
-        st.stop()
+        # Handle dates
+        if "date_opened" in df.columns:
+            df["date_opened"] = pd.to_datetime(df["date_opened"], errors="coerce")
+            date_col = "date_opened"
+        elif "exit_date" in df.columns:
+            df["exit_date"] = pd.to_datetime(df["exit_date"], errors="coerce")
+            date_col = "exit_date"
+        else:
+            st.error("CSV must contain a 'Date Opened' or 'Exit Date' column")
+            st.stop()
 
-    min_date, max_date = df[date_col].min().date(), df[date_col].max().date()
-    start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
-    df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
+        # Date filter
+        min_date = df[date_col].min().date()
+        max_date = df[date_col].max().date()
+        start_date, end_date = st.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
 
-    if "p/l" in df.columns:
-        df.rename(columns={"p/l": "gross_pl"}, inplace=True)
+        # Normalize columns
+        if "p/l" in df.columns:
+            df = df.rename(columns={"p/l": "gross_pl"})
+        if "gross_pl" not in df.columns:
+            st.error("CSV must contain 'P/L' or 'Gross_PL'")
+            st.stop()
 
-    df["commissions_paid"] = df.get("opening_commissions_+_fees", 0) + df.get("closing_commissions_+_fees", 0)
-    df["profit_after_commissions"] = df["gross_pl"] - df["commissions_paid"]
+        if "opening_commissions_+_fees" not in df.columns:
+            df["opening_commissions_+_fees"] = 0
+        if "closing_commissions_+_fees" not in df.columns:
+            df["closing_commissions_+_fees"] = 0
 
-    summary = df.groupby("strategy").agg(
-        Gross_PL=("profit_after_commissions", "sum"),
-        Commissions=("commissions_paid", "sum")
-    ).reset_index()
+        df["commissions_paid"] = df["opening_commissions_+_fees"] + df["closing_commissions_+_fees"]
+        df["profit_after_commissions"] = df["gross_pl"] - df["commissions_paid"]
 
-    summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
-    summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
+        summary = df.groupby("strategy").agg(
+            Gross_PL=("profit_after_commissions", "sum"),
+            Commissions=("commissions_paid", "sum")
+        ).reset_index()
 
-    # Totals
-    total_gross, total_comm, total_tax, total_net = (
-        summary["Gross_PL"].sum(),
-        summary["Commissions"].sum(),
-        summary["Tax_Paid"].sum(),
-        summary["Net_PL"].sum()
-    )
+        summary["Tax_Paid"] = summary["Gross_PL"].apply(lambda x: x * tax_rate if x > 0 else 0)
+        summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
 
-    # === KPI CARDS ===
-    st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
-    for value, label in [
-        (total_gross, "Gross P/L"),
-        (total_comm, "Commissions"),
-        (total_tax, "Tax Paid"),
-        (total_net, "Net P/L")
-    ]:
-        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${value:,.2f}</div><div class='kpi-label'>{label}</div></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        # Totals
+        total_gross = summary["Gross_PL"].sum()
+        total_comm = summary["Commissions"].sum()
+        total_tax = summary["Tax_Paid"].sum()
+        total_net = summary["Net_PL"].sum()
 
-    # === STRATEGY TABLE ===
-    st.markdown("## 📌 Strategy-Level Summary")
-    st.dataframe(summary.style.format({
-        "Gross_PL": "${:,.2f}",
-        "Commissions": "${:,.2f}",
-        "Tax_Paid": "${:,.2f}",
-        "Net_PL": "${:,.2f}"
-    }))
+        # === KPI CARDS ===
+        st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_tax:,.2f}</div><div class='kpi-label'>Tax Paid</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_net:,.2f}</div><div class='kpi-label'>Net P/L</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # === DOWNLOAD BUTTON ===
-    csv = summary.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        "⬇️ Download Strategy Summary",
-        data=csv,
-        file_name="strategy_summary.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
+        # === TABLE ===
+        st.markdown("### 📌 Strategy-Level Summary")
+        st.dataframe(summary.style.format({
+            "Gross_PL": "${:,.2f}",
+            "Commissions": "${:,.2f}",
+            "Tax_Paid": "${:,.2f}",
+            "Net_PL": "${:,.2f}"
+        }))
 
-# === ABOUT ===
-st.markdown("## ℹ️ About")
-st.write("This dashboard helps analyze Option Omega strategies with **Gross P/L, Commissions, Taxes, and Net P/L** in a clean interface.")
+        # === ABOUT SECTION ===
+        st.markdown("### ℹ️ About")
+        st.write("This dashboard helps analyze Option Omega strategies with **Gross P/L**, **Commissions**, **Taxes**, and **Net P/L** in a clean, professional interface.")
+
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
