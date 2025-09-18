@@ -44,6 +44,7 @@ st.markdown("""
         margin-left: 20px;
         cursor: pointer;
         color: #374151;
+        text-decoration: none;
     }
     .navbar-links:hover {
         color: #f97316;
@@ -125,28 +126,34 @@ st.markdown("""
     .stDownloadButton button:hover {
         background: #f97316;
     }
+
+    /* Remove empty white bars */
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+    }
     </style>
 """, unsafe_allow_html=True)
+
 
 # === NAVBAR ===
 st.markdown("""
 <div class="navbar">
-    <div class="navbar-title"> Smart Tax</div>
+    <div class="navbar-title">Smart Tax</div>
     <div>
-        <span class="navbar-links">Dashboard</span>
-        <span class="navbar-links">Strategies</span>
+        <a class="navbar-links" href="#dashboard">Dashboard</a>
+        <a class="navbar-links" href="#strategies">Strategies</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # === INPUT SECTION ===
-st.markdown("<div class='card'>", unsafe_allow_html=True)
-col1, col2 = st.columns([1, 2])
-with col1:
-    tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
-with col2:
-    uploaded_file = st.file_uploader("Upload your Option Omega CSV trade log", type="csv")
-st.markdown("</div>", unsafe_allow_html=True)
+with st.container():
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
+    with col2:
+        uploaded_file = st.file_uploader("Upload your Option Omega CSV trade log", type="csv")
 
 # === PROCESS CSV ===
 if uploaded_file is not None:
@@ -167,10 +174,8 @@ if uploaded_file is not None:
 
         # Date filter
         min_date, max_date = df[date_col].min().date(), df[date_col].max().date()
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
         start_date, end_date = st.date_input("Select Date Range", [min_date, max_date],
                                              min_value=min_date, max_value=max_date)
-        st.markdown("</div>", unsafe_allow_html=True)
         df = df[(df[date_col].dt.date >= start_date) & (df[date_col].dt.date <= end_date)]
 
         # Normalize P/L
@@ -203,7 +208,8 @@ if uploaded_file is not None:
             summary["Net_PL"].sum(),
         )
 
-        # Dashboard Overview
+        # === DASHBOARD SECTION ===
+        st.markdown("<div id='dashboard'></div>", unsafe_allow_html=True)
         st.markdown("<div class='card'><div class='section-title'>Dashboard Overview</div>", unsafe_allow_html=True)
         st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
         for val, label in [
@@ -218,7 +224,8 @@ if uploaded_file is not None:
             )
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # Strategy Summary
+        # === STRATEGIES SECTION ===
+        st.markdown("<div id='strategies'></div>", unsafe_allow_html=True)
         st.markdown("<div class='card'><div class='section-title'>Strategy Performance Summary</div>", unsafe_allow_html=True)
         st.dataframe(summary.style.format({
             "Gross_PL": "${:,.2f}",
