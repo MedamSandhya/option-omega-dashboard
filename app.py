@@ -4,20 +4,11 @@ import pandas as pd
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Option Omega Strategy Dashboard", layout="wide")
 
-# === DARK/LIGHT MODE ===
-dark_mode = st.sidebar.toggle("🌙 Dark Mode")
-
-# Define colors for light/dark
-if dark_mode:
-    bg_color = "#1e293b"
-    card_color = "#0f172a"
-    text_color = "#f1f5f9"
-    accent = "#f97316"
-else:
-    bg_color = "#f8fafc"
-    card_color = "white"
-    text_color = "#111827"
-    accent = "#f97316"
+# === COLORS (Light Mode) ===
+bg_color = "#f8fafc"
+card_color = "white"
+text_color = "#111827"
+accent = "#f97316"
 
 # === CUSTOM CSS ===
 st.markdown(f"""
@@ -39,6 +30,7 @@ st.markdown(f"""
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 25px;
     }}
     .navbar-title {{
         font-size: 22px;
@@ -67,12 +59,12 @@ st.markdown(f"""
         padding: 20px;
         border-radius: 16px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         transition: all 0.2s ease-in-out;
     }}
     .kpi-card:hover {{
         transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }}
     .kpi-value {{
         font-size: 26px;
@@ -81,7 +73,7 @@ st.markdown(f"""
     }}
     .kpi-label {{
         font-size: 14px;
-        color: #9ca3af;
+        color: #6b7280;
     }}
 
     /* Data Table */
@@ -95,6 +87,9 @@ st.markdown(f"""
         text-align: center;
         padding: 10px;
     }}
+    .dataframe tr:nth-child(even) {{
+        background-color: #fef3c7 !important;
+    }}
     .dataframe tr:hover {{
         background-color: #fde68a !important;
     }}
@@ -103,7 +98,7 @@ st.markdown(f"""
     .download-btn {{
         background: {accent};
         color: white;
-        padding: 10px 20px;
+        padding: 12px 20px;
         border-radius: 12px;
         font-weight: 600;
         text-decoration: none;
@@ -160,7 +155,12 @@ if uploaded_file:
     summary["Net_PL"] = summary["Gross_PL"] - summary["Commissions"] - summary["Tax_Paid"]
 
     # Totals
-    total_gross, total_comm, total_tax, total_net = summary["Gross_PL"].sum(), summary["Commissions"].sum(), summary["Tax_Paid"].sum(), summary["Net_PL"].sum()
+    total_gross, total_comm, total_tax, total_net = (
+        summary["Gross_PL"].sum(),
+        summary["Commissions"].sum(),
+        summary["Tax_Paid"].sum(),
+        summary["Net_PL"].sum()
+    )
 
     # === KPI CARDS ===
     st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
@@ -194,4 +194,4 @@ if uploaded_file:
 
 # === ABOUT ===
 st.markdown("## ℹ️ About")
-st.write("This dashboard is built for analyzing Option Omega strategy performance with taxes, commissions, and net P/L in an intuitive interface.")
+st.write("This dashboard helps analyze Option Omega strategies with **Gross P/L, Commissions, Taxes, and Net P/L** in a clean interface.")
