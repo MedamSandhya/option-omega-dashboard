@@ -40,18 +40,23 @@ st.markdown("""
     .navbar-title {
         font-size: 22px;
         font-weight: 800;
-        color: #fb923c;
+        color: #fb923c; /* Smart Tax stays orange */
     }
-    .navbar-links {
+    .navbar-links, 
+    .navbar-links:link, 
+    .navbar-links:visited {
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 500;
         margin-left: 20px;
         cursor: pointer;
-        color: #374151;
-        text-decoration: none;
+        color: #111827 !important;  /* Force black */
+        text-decoration: none !important;  /* Force no underline */
     }
-    .navbar-links:hover {
-        color: #f97316;
+
+    .navbar-links:hover, 
+    .navbar-links:active {
+        color: #f97316 !important;  /* Orange on hover */
+        text-decoration: none !important;  /* Keep no underline */
     }
 
     /* Inputs & uploader */
@@ -146,30 +151,64 @@ st.markdown("""
 
 import yfinance as yf
 
-# === STOCK TICKER (Dynamic with yfinance) ===
+import yfinance as yf
+
+# === STOCK TICKER WITH PRICE + % CHANGE ===
 def get_prices(symbols):
     prices = {}
     for sym in symbols:
         try:
             ticker = yf.Ticker(sym)
-            data = ticker.history(period="1d", interval="1m")
-            if not data.empty:
+            data = ticker.history(period="2d", interval="1d")  # need 2 days for change
+            if not data.empty and len(data) >= 2:
                 last_price = round(data["Close"].iloc[-1], 2)
-                prices[sym] = last_price
+                prev_close = round(data["Close"].iloc[-2], 2)
+                change = last_price - prev_close
+                pct_change = round((change / prev_close) * 100, 2) if prev_close > 0 else 0
+                color = "green" if change >= 0 else "red"
+                sign = "+" if change >= 0 else ""
+                prices[sym] = (last_price, f"{sign}{pct_change}%", color)
             else:
-                prices[sym] = "N/A"
+                prices[sym] = ("N/A", "0%", "gray")
         except Exception:
-            prices[sym] = "Err"
+            prices[sym] = ("Err", "0%", "gray")
     return prices
 
-symbols = ["AAPL", "MSFT", "TSLA", "NVDA", "^GSPC"]  # ^GSPC = S&P 500
+symbols = [
+    "SPY",
+    "QQQ",
+    "AAPL",   # Apple
+    "MSFT",   # Microsoft
+    "TSLA",   # Tesla
+    "NVDA",   # Nvidia
+    "AMZN",   # Amazon
+    "GOOGL",  # Alphabet Class A
+    "META",   # Meta Platforms
+    "NFLX",   # Netflix
+    "AMD",    # Advanced Micro Devices
+    "INTC",   # Intel
+    "ADBE",   # Adobe
+    "CRM",    # Salesforce
+    "SHOP",   # Shopify
+    "SQ",     # Block (Square)
+    "PYPL",   # PayPal
+    "PLTR",
+    "T",
+    "WMT"
+]  
 prices = get_prices(symbols)
+
+# Render ticker HTML
+ticker_html = " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(
+    [f"<span style='color:{color}; font-weight:400; font-size:15px;'>{sym}: ${price} ({pct})</span>"
+     for sym, (price, pct, color) in prices.items()]
+)
 
 st.markdown(f"""
 <div style="background:#ffffff; padding:10px 0; border-radius:12px; margin-bottom:20px;
             box-shadow:0 4px 8px rgba(0,0,0,0.05); overflow:hidden;">
-  <marquee behavior="scroll" direction="left" scrollamount="6" style="font-size:16px; font-weight:600; color:#f97316;">
-    {" &nbsp;&nbsp;|&nbsp;&nbsp; ".join([f"📈 {sym}: ${price}" for sym, price in prices.items()])}
+  <marquee behavior="scroll" direction="left" scrollamount="6" style="font-size:15px; letter-spacing:0.5px;">
+    {ticker_html}
   </marquee>
 </div>
 """, unsafe_allow_html=True)
