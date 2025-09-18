@@ -16,40 +16,44 @@ st.markdown("""
     /* Navbar */
     .navbar {
         background: #ffffff;
-        padding: 18px;
-        border-radius: 12px;
+        padding: 16px 28px;
+        border-radius: 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 25px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
     .navbar-title {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
         color: #f97316;
     }
     .navbar-links {
-        color: #f97316;
+        font-size: 16px;
         font-weight: 600;
         margin-left: 20px;
         cursor: pointer;
+        color: #374151;
+    }
+    .navbar-links:hover {
+        color: #f97316;
     }
 
     /* KPI Cards */
     .kpi-container {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 25px;
+        margin: 25px 0;
     }
     .kpi-card {
         flex: 1;
         background: white;
-        padding: 25px;
-        border-radius: 14px;
+        padding: 24px;
+        border-radius: 16px;
         text-align: center;
         box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-        margin: 0 10px;
+        margin: 0 12px;
     }
     .kpi-value {
         font-size: 28px;
@@ -59,16 +63,17 @@ st.markdown("""
     }
     .kpi-label {
         font-size: 14px;
+        font-weight: 500;
         color: #6b7280;
     }
 
-    /* File uploader */
-    .uploadedFile { 
-        background: #ffffff !important; 
-        color: #111827 !important; 
+    /* File uploader + Tax input */
+    .stFileUploader {
+        background: #ffffff;
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 20px;
     }
-
-    /* Tax input */
     div[data-baseweb="input"] > div {
         background-color: #ffedd5 !important;
         border-radius: 8px !important;
@@ -82,8 +87,6 @@ st.markdown("""
         font-size: 22px;
         font-weight: 700;
         margin: 30px 0 15px 0;
-        padding-bottom: 8px;
-        border-bottom: 3px solid #f97316;
         color: #f97316;
     }
 
@@ -104,20 +107,16 @@ st.markdown("""
     }
 
     /* Download Button */
-    .download-btn {
+    .stDownloadButton button {
         background: #fb923c;
         color: white !important;
         font-weight: 600;
         padding: 12px 24px;
         border-radius: 10px;
         border: none;
-        text-decoration: none !important;
-        display: inline-block;
-        margin-top: 20px;
     }
-    .download-btn:hover {
+    .stDownloadButton button:hover {
         background: #f97316;
-        text-decoration: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -134,8 +133,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # === INPUTS ===
-tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
-uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv", label_visibility="collapsed")
+col1, col2 = st.columns([1, 2])
+with col1:
+    tax_rate = st.number_input("Enter Tax Rate (%)", min_value=0.0, max_value=100.0, value=30.0) / 100
+with col2:
+    uploaded_file = st.file_uploader("📂 Upload your Option Omega trade log (CSV)", type="csv")
 
 if uploaded_file is not None:
     try:
@@ -188,8 +190,8 @@ if uploaded_file is not None:
         total_tax = summary["Tax_Paid"].sum()
         total_net = summary["Net_PL"].sum()
 
-        # === DASHBOARD OVERVIEW ===
-        st.markdown("<div class='section-title'>📊 Dashboard Overview</div>", unsafe_allow_html=True)
+        # === KPI CARDS ===
+        st.markdown("<div class='section-title'>Dashboard Overview</div>", unsafe_allow_html=True)
         st.markdown("<div class='kpi-container'>", unsafe_allow_html=True)
         st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_gross:,.2f}</div><div class='kpi-label'>Gross P/L</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='kpi-card'><div class='kpi-value'>${total_comm:,.2f}</div><div class='kpi-label'>Commissions</div></div>", unsafe_allow_html=True)
@@ -198,7 +200,7 @@ if uploaded_file is not None:
         st.markdown("</div>", unsafe_allow_html=True)
 
         # === STRATEGY SUMMARY ===
-        st.markdown("<div class='section-title'>📌 Strategy Performance Summary</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Strategy Performance Summary</div>", unsafe_allow_html=True)
         st.dataframe(summary.style.format({
             "Gross_PL": "${:,.2f}",
             "Commissions": "${:,.2f}",
@@ -206,16 +208,13 @@ if uploaded_file is not None:
             "Net_PL": "${:,.2f}"
         }))
 
-        # Download button
+        # === DOWNLOAD BUTTON ===
         csv = summary.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Download Strategy Summary",
             data=csv,
             file_name="strategy_summary.csv",
-            mime="text/csv",
-            key="download-csv",
-            use_container_width=True,
-            type="primary"
+            mime="text/csv"
         )
 
     except Exception as e:
